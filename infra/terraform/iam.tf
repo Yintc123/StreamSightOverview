@@ -68,7 +68,10 @@ data "aws_iam_policy_document" "github_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${var.github_repo}:ref:refs/heads/${var.deploy_branch}"]
+      # This org's OIDC tokens embed immutable IDs in the subject, e.g.
+      # repo:OWNER@<ownerId>/REPO@<repoId>:ref:refs/heads/main — the @* anchors
+      # absorb those IDs while still pinning the exact owner/repo names + branch.
+      values = ["repo:${replace(var.github_repo, "/", "@*/")}@*:ref:refs/heads/${var.deploy_branch}"]
     }
   }
 }
