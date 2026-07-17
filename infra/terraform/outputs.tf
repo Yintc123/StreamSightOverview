@@ -34,6 +34,11 @@ output "ecr_repository_urls" {
   )
 }
 
+output "terraform_role_arns" {
+  description = "Per-app OIDC Terraform-CI role ARN. Set each app repo's TF_ROLE_ARN secret to its own value; the app repos need no local bootstrap."
+  value       = { for k, r in aws_iam_role.app_terraform : k => r.arn }
+}
+
 # --- Infra pipeline (not an app) ---
 
 output "terraform_role_arn" {

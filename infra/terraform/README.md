@@ -133,15 +133,22 @@ provisions, per app (`var.ecs_apps`):
 - an **ECS execution role** (`streamsight-<app>-execution`) that can read only
   `/streamsight/shared/*` + its own `/streamsight/<app>/*` — this is how the apps **share
   SSM** under least privilege.
+- a **Terraform CI role** (`streamsight-<app>-terraform`, AdministratorAccess) trusted by
+  that repo — so each app's OWN Terraform stack (its ALB/CloudFront/ECS service, the
+  "added later" pieces) can `plan`/`apply` via CI. **Provisioning it here is deliberate:
+  the app repos then need no local bootstrap** — this overview stack is the single admin
+  bootstrap, and every app deploys entirely through CI.
 
-Wire-up per repo: `terraform output -json deploy_role_arns` and
+Wire-up per repo: `terraform output -json deploy_role_arns`,
+`terraform output -json terraform_role_arns`, and
 `terraform output -json ecr_repository_urls` return one entry per app
-(`overview` / `frontend` / `backend` / `streamlit`) — set each repo's CI to assume
-its own role and push to its own ECR.
+(`overview` / `frontend` / `backend` / `streamlit`). In each app repo set
+`DEPLOY_ROLE_ARN` (image deploy) + `TF_ROLE_ARN` (its Terraform stack) to its own values,
+and push to its own ECR.
 
 > If a real GitHub repo name differs from the default, override `ecs_apps` in
-> `terraform.tfvars`. The ECS **services + task defs + public routing** are added later
-> (they need per-app exposure decisions); the ECR + roles above work immediately.
+> `terraform.tfvars`. The ECS **services + task defs + public routing** live in each app
+> repo's own Terraform stack; the ECR + roles above are created here up front.
 
 ## Notes / trade-offs
 

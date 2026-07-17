@@ -171,5 +171,27 @@ resource "aws_iam_role_policy" "app_deploy" {
   policy   = data.aws_iam_policy_document.app_deploy[each.key].json
 }
 
-# Outputs (deploy_role_arns / ecr_repository_urls) are unified across all four
-# apps in outputs.tf.
+# ---- Terraform CI role per app (manages that app's OWN infra stack) ----
+# Each app repo has its own Terraform stack (its ECS service + task def + public
+# routing — the "added later" pieces). That stack manages ALB/CloudFront/SGs,
+# which the deploy role above can't touch, so it needs an admin-ish role trusted
+# by the app repo. Provisioning it HERE (once, via the overview's already-working
+# admin pipeline) means the app repos never need a local bootstrap — each sets
+# its TF_ROLE_ARN to its entry in terraform_role_arns and runs everything in CI.
+#
+# Reuses the same per-repo/branch OIDC trust as app_deploy. AdministratorAccess
+# keeps it simple (mirrors github_terraform) — tighten later.
+resource "aws_iam_role" "app_terraform" {
+  for_each           = var.ecs_apps
+  name               = "${var.project}-${each.key}-terraform"
+  assume_role_policy = data.aws_iam_policy_document.app_deploy_assume[each.key].json
+}
+
+resource "aws_iam_role_policy_attachment" "app_terraform_admin" {
+  for_each   = var.ecs_apps
+  role       = aws_iam_role.app_terraform[each.key].name
+  policy_arn = "arn:aws:iam::aws:policy/AdministratorAccess"
+}
+
+# Outputs (deploy_role_arns / terraform_role_arns / ecr_repository_urls) are
+# unified across all four apps in outputs.tf.
