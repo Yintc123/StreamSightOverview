@@ -120,6 +120,26 @@ Notes:
   backend/frontend params are created now (when a value is set) and get their task-def
   injection + IAM read grants when those services are added to this Terraform.
 
+## Multi-repo deploys (frontend / backend / streamlit)
+
+Each app lives in its own GitHub repo and deploys to ECS with its own CI. `apps.tf`
+provisions, per app (`var.ecs_apps`):
+
+- an **ECR repo** (`streamsight-<app>`),
+- an **OIDC deploy role** (`streamsight-<app>-deploy`) trusted only by that repo
+  (`repo:<owner>/<repo>:*`) — scoped to push its ECR + update its ECS service. No AWS keys
+  in GitHub.
+- an **ECS execution role** (`streamsight-<app>-execution`) that can read only
+  `/streamsight/shared/*` + its own `/streamsight/<app>/*` — this is how the apps **share
+  SSM** under least privilege.
+
+Wire-up per repo: set the repo's CI to assume its role from `terraform output
+app_deploy_role_arns`, pushing to `terraform output app_ecr_repository_urls`.
+
+> If a real GitHub repo name differs from the default, override `ecs_apps` in
+> `terraform.tfvars`. The ECS **services + task defs + public routing** are added later
+> (they need per-app exposure decisions); the ECR + roles above work immediately.
+
 ## Notes / trade-offs
 
 - MariaDB/Redis on one EC2 is **not HA**. Data lives on the EBS `data` volume (survives instance
