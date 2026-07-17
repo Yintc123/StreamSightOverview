@@ -25,6 +25,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # TEMP debug: reveal which role the secret points to + the token subject.
+      # A role name is not sensitive; remove this step once the deploy works.
+      - name: Debug OIDC
+        env:
+          ARN: ${{ secrets.DEPLOY_ROLE_ARN }}
+        run: |
+          echo "role tail : ...${ARN: -40}"
+          echo "arn length: ${#ARN}"
+          echo "event     : ${{ github.event_name }}"
+          echo "ref       : ${{ github.ref }}"
+          echo "expected sub -> repo:${{ github.repository }}:ref:${{ github.ref }}"
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.DEPLOY_ROLE_ARN }}
