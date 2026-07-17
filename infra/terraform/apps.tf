@@ -98,7 +98,7 @@ data "aws_iam_policy_document" "app_deploy_assume" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
     condition {
       test     = "StringEquals"

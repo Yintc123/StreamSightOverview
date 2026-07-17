@@ -46,14 +46,11 @@ resource "aws_iam_role" "ecs_task" {
 # GitHub Actions OIDC + CI roles
 # =====================================================================
 
-data "tls_certificate" "github" {
-  url = "https://token.actions.githubusercontent.com/.well-known/openid-configuration"
-}
-
-resource "aws_iam_openid_connect_provider" "github" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
+# The GitHub Actions OIDC provider is account-global (one per account) and
+# already exists in this account, so reference it instead of managing it —
+# this Terraform must not own (and potentially destroy) a shared resource.
+data "aws_iam_openid_connect_provider" "github" {
+  url = "https://token.actions.githubusercontent.com"
 }
 
 data "aws_iam_policy_document" "github_assume" {
@@ -61,7 +58,7 @@ data "aws_iam_policy_document" "github_assume" {
     actions = ["sts:AssumeRoleWithWebIdentity"]
     principals {
       type        = "Federated"
-      identifiers = [aws_iam_openid_connect_provider.github.arn]
+      identifiers = [data.aws_iam_openid_connect_provider.github.arn]
     }
     condition {
       test     = "StringEquals"
