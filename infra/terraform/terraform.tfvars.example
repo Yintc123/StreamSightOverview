@@ -7,6 +7,13 @@ db_password      = "change-me"
 db_root_password = "change-me-root"
 redis_password   = "change-me-redis"
 
+# --- App secrets (optional; only stored in SSM when set) ---
+# Needed when the backend/frontend deploy. Generate each: openssl rand -base64 48
+# encryption_key            = "..."   # backend column encryption (AES-256)
+# jwt_secret_key            = "..."   # backend JWT signing
+# refresh_token_hash_secret = "..."   # backend refresh-token pepper (distinct)
+# session_secret            = "..."   # frontend iron-session signing
+
 # --- Optional: SSH access to the datastore EC2 ---
 # ssh_ingress_cidr = "1.2.3.4/32"
 # key_pair_name    = "my-keypair"

@@ -88,6 +88,37 @@ variable "redis_password" {
   sensitive = true
 }
 
+# ---- App secrets (optional; a SecureString is created in SSM only when set).
+# Injected into the backend/frontend ECS tasks when those services deploy. ----
+
+variable "encryption_key" {
+  description = "Backend AES-256 column encryption key (>= 32 chars)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "jwt_secret_key" {
+  description = "Backend JWT signing secret (>= 32 chars)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "refresh_token_hash_secret" {
+  description = "Backend refresh-token hash pepper (>= 32 chars, distinct from jwt_secret_key)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "session_secret" {
+  description = "Frontend iron-session signing secret (>= 32 chars)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 # ---- ECS service sizing ----
 
 variable "desired_count" {

@@ -90,6 +90,36 @@ Tuned for minimum cost (~$22–25/mo, ap-northeast-2, low traffic):
   Mumbai `ap-south-1` is cheapest overall but ~100 ms away; Sydney/Hong Kong are pricier. To
   change region, update `var.region` + the workflows' `AWS_REGION` + `backend.hcl`.
 
+## Secrets (SSM Parameter Store)
+
+Secrets are SecureString params (KMS-encrypted, free standard tier), namespaced so the
+three apps can **share cleanly**:
+
+| Path | Value | Who reads it |
+|------|-------|--------------|
+| `/streamsight/shared/db_password` | app DB user password | Go, Backend |
+| `/streamsight/shared/redis_password` | Redis password | Go, Backend, Frontend |
+| `/streamsight/backend/encryption_key` | AES-256 column key | Backend |
+| `/streamsight/backend/jwt_secret_key` | JWT signing | Backend |
+| `/streamsight/backend/refresh_token_hash_secret` | refresh-token pepper | Backend |
+| `/streamsight/frontend/session_secret` | iron-session signing | Frontend |
+
+**Sharing model**: shared datastore creds live under `shared/` and are read by every app
+that connects (Go + Backend hit the same MariaDB user; all three share the one Redis,
+separated by `REDIS_KEY_PREFIX`). App-specific secrets live under `backend/` / `frontend/`
+and are read only by that app's ECS execution role — **least privilege via path**, e.g. the
+backend role gets `ssm:GetParameters` on `/streamsight/shared/*` + `/streamsight/backend/*`.
+
+Notes:
+- Only **secrets** go here. Non-secret config (hosts, ports, timeouts, `NEXT_PUBLIC_*`,
+  algorithm names, token lifetimes) stays as plain task-def env / build-time env.
+- `db_root_password` is **not** in SSM — only EC2 `user_data` uses it to init MariaDB.
+- KMS: params use the AWS-managed `alias/aws/ssm` key (free); no extra `kms:Decrypt` grant
+  needed. A customer-managed key would require explicit grants.
+- Today only the Go server is deployed, so only the `shared/` params are read. The
+  backend/frontend params are created now (when a value is set) and get their task-def
+  injection + IAM read grants when those services are added to this Terraform.
+
 ## Notes / trade-offs
 
 - MariaDB/Redis on one EC2 is **not HA**. Data lives on the EBS `data` volume (survives instance
