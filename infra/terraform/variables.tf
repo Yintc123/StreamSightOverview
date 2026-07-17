@@ -16,6 +16,12 @@ variable "github_repo" {
   default     = "Yintc123/StreamSightOverview"
 }
 
+variable "deploy_branch" {
+  description = "Only OIDC tokens from this branch may assume the CI/deploy roles. Restricts CI/CD to this branch across all apps."
+  type        = string
+  default     = "main"
+}
+
 variable "container_port" {
   description = "Port the Go server listens on."
   type        = number

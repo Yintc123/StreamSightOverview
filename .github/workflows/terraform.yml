@@ -6,15 +6,11 @@ on:
     paths:
       - 'infra/terraform/**'
       - '.github/workflows/terraform.yml'
-  pull_request:
-    paths:
-      - 'infra/terraform/**'
-      - '.github/workflows/terraform.yml'
+  workflow_dispatch:
 
 permissions:
   id-token: write # assume the AWS role via OIDC
   contents: read
-  pull-requests: write
 
 env:
   AWS_REGION: ap-northeast-2
@@ -50,9 +46,8 @@ jobs:
         run: terraform validate
 
       - name: Plan
-        if: github.event_name == 'pull_request'
         run: terraform plan -no-color -input=false
 
       - name: Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: github.ref == 'refs/heads/main'
         run: terraform apply -no-color -input=false -auto-approve

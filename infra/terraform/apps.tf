@@ -108,7 +108,7 @@ data "aws_iam_policy_document" "app_deploy_assume" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:${each.value.github_repo}:*"]
+      values   = ["repo:${each.value.github_repo}:ref:refs/heads/${var.deploy_branch}"]
     }
   }
 }
