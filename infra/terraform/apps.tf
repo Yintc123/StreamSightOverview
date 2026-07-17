@@ -170,13 +170,5 @@ resource "aws_iam_role_policy" "app_deploy" {
   policy   = data.aws_iam_policy_document.app_deploy[each.key].json
 }
 
-# ---- Outputs: wire these into each repo's GitHub secrets ----
-output "app_deploy_role_arns" {
-  description = "Per-app OIDC deploy role ARN — set as the deploy role in each repo's CI."
-  value       = { for k, r in aws_iam_role.app_deploy : k => r.arn }
-}
-
-output "app_ecr_repository_urls" {
-  description = "Per-app ECR repository URL."
-  value       = { for k, r in aws_ecr_repository.apps : k => r.repository_url }
-}
+# Outputs (deploy_role_arns / ecr_repository_urls) are unified across all four
+# apps in outputs.tf.

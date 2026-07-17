@@ -47,13 +47,13 @@ with your own admin credentials.
 
 3. **Wire up GitHub** using the outputs:
 
-   | GitHub secret       | Value                                   |
-   |---------------------|-----------------------------------------|
-   | `TF_ROLE_ARN`       | `terraform output github_terraform_role_arn` |
-   | `DEPLOY_ROLE_ARN`   | `terraform output github_deploy_role_arn`    |
-   | `DB_PASSWORD`       | same as `db_password`                   |
-   | `DB_ROOT_PASSWORD`  | same as `db_root_password`              |
-   | `REDIS_PASSWORD`    | same as `redis_password`                |
+   | GitHub secret       | Value                                              |
+   |---------------------|----------------------------------------------------|
+   | `TF_ROLE_ARN`       | `terraform output terraform_role_arn`              |
+   | `DEPLOY_ROLE_ARN`   | `terraform output -json deploy_role_arns` → `overview` |
+   | `DB_PASSWORD`       | same as `db_password`                              |
+   | `DB_ROOT_PASSWORD`  | same as `db_root_password`                         |
+   | `REDIS_PASSWORD`    | same as `redis_password`                           |
 
    Also commit `backend.hcl` (no secrets) so the `terraform.yml` workflow can `init`.
 
@@ -61,10 +61,11 @@ with your own admin credentials.
    `deploy.yml` workflow run (push to `main`), or push once manually:
 
    ```bash
+   REPO=$(terraform output -json ecr_repository_urls | jq -r .overview)
    aws ecr get-login-password --region ap-northeast-2 \
-     | docker login --username AWS --password-stdin "$(terraform output -raw ecr_repository_url | cut -d/ -f1)"
-   docker build -t "$(terraform output -raw ecr_repository_url):latest" ../../StreamSightGoServer
-   docker push "$(terraform output -raw ecr_repository_url):latest"
+     | docker login --username AWS --password-stdin "$(echo "$REPO" | cut -d/ -f1)"
+   docker build -t "$REPO:latest" ../../StreamSightGoServer
+   docker push "$REPO:latest"
    ```
 
 ## Day-to-day
@@ -133,8 +134,10 @@ provisions, per app (`var.ecs_apps`):
   `/streamsight/shared/*` + its own `/streamsight/<app>/*` — this is how the apps **share
   SSM** under least privilege.
 
-Wire-up per repo: set the repo's CI to assume its role from `terraform output
-app_deploy_role_arns`, pushing to `terraform output app_ecr_repository_urls`.
+Wire-up per repo: `terraform output -json deploy_role_arns` and
+`terraform output -json ecr_repository_urls` return one entry per app
+(`overview` / `frontend` / `backend` / `streamlit`) — set each repo's CI to assume
+its own role and push to its own ECR.
 
 > If a real GitHub repo name differs from the default, override `ecs_apps` in
 > `terraform.tfvars`. The ECS **services + task defs + public routing** are added later
