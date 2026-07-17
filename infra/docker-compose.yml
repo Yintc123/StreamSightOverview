@@ -4,12 +4,14 @@ services:
     container_name: streamsight-mariadb
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-streamsight}
-      MARIADB_USER: ${MARIADB_USER:-streamsight}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-streamsight}
+      # Left-hand KEYs are required by the mariadb image; the ${...} names use
+      # the generic DB_* convention (matches the backend/Go .env).
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${DB_NAME:-streamsight}
+      MARIADB_USER: ${DB_USER:-streamsight}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-streamsight}
     ports:
-      - "${MARIADB_PORT:-3306}:3306"
+      - "${DB_PORT:-3306}:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
