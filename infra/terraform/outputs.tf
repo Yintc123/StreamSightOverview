@@ -1,5 +1,10 @@
+output "cloudfront_url" {
+  description = "Public HTTPS URL of the API — hit this."
+  value       = "https://${aws_cloudfront_distribution.app.domain_name}"
+}
+
 output "alb_dns_name" {
-  description = "Public URL of the Go API (http://<this>)."
+  description = "ALB origin hostname. Direct access is blocked (403) — go through cloudfront_url."
   value       = aws_lb.app.dns_name
 }
 

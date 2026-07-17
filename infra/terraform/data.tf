@@ -21,3 +21,8 @@ data "aws_subnet" "datastore" {
 data "aws_ssm_parameter" "al2023" {
   name = "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64"
 }
+
+# CloudFront edge IP ranges — used to lock the ALB so only CloudFront can reach it.
+data "aws_ec2_managed_prefix_list" "cloudfront" {
+  name = "com.amazonaws.global.cloudfront.origin-facing"
+}

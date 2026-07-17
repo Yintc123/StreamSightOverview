@@ -1,15 +1,15 @@
-# Public ALB: HTTP from the internet.
+# Public ALB: HTTP only from CloudFront's edge network (not the open internet).
 resource "aws_security_group" "alb" {
   name_prefix = "${var.project}-alb-"
   description = "ALB ingress"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description = "HTTP"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    description     = "HTTP from CloudFront edge only"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    prefix_list_ids = [data.aws_ec2_managed_prefix_list.cloudfront.id]
   }
 
   egress {
