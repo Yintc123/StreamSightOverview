@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.6"
+  required_version = ">= 1.15"
 
   required_providers {
     aws = {
@@ -12,8 +12,11 @@ terraform {
     }
   }
 
-  # Remote state for CI/CD. Provide values via `-backend-config=backend.hcl`
-  # (see backend.hcl.example). Create the S3 bucket + DynamoDB lock table once
-  # before the first `terraform init` — see README.md.
-  backend "s3" {}
+  # Remote state in S3 with native S3 state locking (use_lockfile, Terraform
+  # 1.10+) — no DynamoDB table required. Bucket/key/region are supplied via
+  # `-backend-config=backend.hcl` (see backend.hcl.example); create the bucket
+  # once before the first `terraform init` — see README.md.
+  backend "s3" {
+    use_lockfile = true
+  }
 }

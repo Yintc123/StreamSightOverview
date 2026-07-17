@@ -14,22 +14,22 @@ Internet ──► ALB ──► ECS Fargate (Go) ──► EC2 (MariaDB + Redis
                          only ALB SG            only ECS SG on 3306/6379
 ```
 
+**Requires Terraform >= 1.15** (state locking uses S3 natively via `use_lockfile`; no DynamoDB).
+CI pins `1.15.8`.
+
 ## One-time bootstrap
 
 The CI roles and remote state must exist before CI can run, so the **first apply is local**
 with your own admin credentials.
 
-1. **Create the state backend** (bucket + lock table), then copy the backend config:
+1. **Create the state backend** — just an S3 bucket. State locking is native to S3
+   (`use_lockfile`), so **no DynamoDB table is needed**. Then copy the config:
 
    ```bash
    aws s3api create-bucket --bucket streamsight-tfstate-<unique> --region ap-northeast-1 \
      --create-bucket-configuration LocationConstraint=ap-northeast-1
    aws s3api put-bucket-versioning --bucket streamsight-tfstate-<unique> \
      --versioning-configuration Status=Enabled
-   aws dynamodb create-table --table-name streamsight-tflock \
-     --attribute-definitions AttributeName=LockID,AttributeType=S \
-     --key-schema AttributeName=LockID,KeyType=HASH \
-     --billing-mode PAY_PER_REQUEST --region ap-northeast-1
 
    cp backend.hcl.example backend.hcl   # edit the bucket name
    cp terraform.tfvars.example terraform.tfvars   # set the 3 passwords

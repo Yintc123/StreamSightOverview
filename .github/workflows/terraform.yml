@@ -37,6 +37,8 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
 
       - name: Init
         run: terraform init -backend-config=backend.hcl
