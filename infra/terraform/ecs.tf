@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/ecs/${var.project}"
+  name              = "/ecs/${local.overview_app}"
   retention_in_days = 7
 }
 
@@ -26,7 +26,7 @@ resource "aws_ecs_cluster_capacity_providers" "main" {
 }
 
 resource "aws_ecs_task_definition" "app" {
-  family                   = var.project
+  family                   = local.overview_app
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = var.task_cpu
@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "app" {
   task_role_arn            = aws_iam_role.ecs_task.arn
 
   container_definitions = jsonencode([{
-    name      = var.project
+    name      = local.overview_app
     image     = "${aws_ecr_repository.app.repository_url}:${var.image_tag}"
     essential = true
 
@@ -72,7 +72,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
-  name            = var.project
+  name            = local.overview_app
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
@@ -92,7 +92,7 @@ resource "aws_ecs_service" "app" {
 
   load_balancer {
     target_group_arn = aws_lb_target_group.app.arn
-    container_name   = var.project
+    container_name   = local.overview_app
     container_port   = var.container_port
   }
 

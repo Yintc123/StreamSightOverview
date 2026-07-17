@@ -14,7 +14,7 @@ data "aws_iam_policy_document" "ecs_assume" {
 
 # Execution role: pulls the image, writes logs, reads the SSM secrets.
 resource "aws_iam_role" "ecs_execution" {
-  name               = "${var.project}-ecs-execution"
+  name               = "${local.overview_app}-execution"
   assume_role_policy = data.aws_iam_policy_document.ecs_assume.json
 }
 
@@ -75,7 +75,7 @@ data "aws_iam_policy_document" "github_assume" {
 
 # --- App pipeline role (deploy.yml): push to ECR + roll out ECS ---
 resource "aws_iam_role" "github_deploy" {
-  name               = "${var.project}-github-deploy"
+  name               = "${local.overview_app}-deploy"
   assume_role_policy = data.aws_iam_policy_document.github_assume.json
 }
 

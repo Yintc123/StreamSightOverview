@@ -14,10 +14,10 @@ permissions:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: streamsight
+  ECR_REPOSITORY: streamsight-overview
   ECS_CLUSTER: streamsight
-  ECS_SERVICE: streamsight
-  CONTAINER_NAME: streamsight
+  ECS_SERVICE: streamsight-overview
+  CONTAINER_NAME: streamsight-overview
 
 jobs:
   deploy:
