@@ -1,0 +1,34 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: streamsight-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: "${db_root_password}"
+      MARIADB_DATABASE: "${db_name}"
+      MARIADB_USER: "${db_user}"
+      MARIADB_PASSWORD: "${db_password}"
+    ports:
+      - "3306:3306"
+    volumes:
+      - /data/mariadb:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: streamsight-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${redis_password}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - /data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${redis_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5

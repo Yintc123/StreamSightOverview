@@ -1,0 +1,56 @@
+name: terraform
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+
+permissions:
+  id-token: write # assume the AWS role via OIDC
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: ap-northeast-1
+  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+  TF_VAR_db_root_password: ${{ secrets.DB_ROOT_PASSWORD }}
+  TF_VAR_redis_password: ${{ secrets.REDIS_PASSWORD }}
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.TF_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Init
+        run: terraform init -backend-config=backend.hcl
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        if: github.event_name == 'pull_request'
+        run: terraform plan -no-color -input=false
+
+      - name: Apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: terraform apply -no-color -input=false -auto-approve

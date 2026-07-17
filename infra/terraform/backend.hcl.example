@@ -1,0 +1,7 @@
+# Copy to backend.hcl and fill in. Safe to commit (no secrets).
+# Create the bucket + lock table once before `terraform init` — see README.md.
+bucket         = "streamsight-tfstate-CHANGEME"
+key            = "streamsight/terraform.tfstate"
+region         = "ap-northeast-1"
+dynamodb_table = "streamsight-tflock"
+encrypt        = true
