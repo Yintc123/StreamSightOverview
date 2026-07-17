@@ -1,7 +1,7 @@
 variable "region" {
   description = "AWS region to deploy into."
   type        = string
-  default     = "ap-northeast-1"
+  default     = "ap-northeast-2"
 }
 
 variable "project" {
@@ -22,6 +22,12 @@ variable "container_port" {
   default     = 8080
 }
 
+variable "cloudfront_price_class" {
+  description = "CloudFront edge coverage. PriceClass_200 includes Asia; _100 is US/EU only (cheapest)."
+  type        = string
+  default     = "PriceClass_200"
+}
+
 variable "image_tag" {
   description = "ECR image tag used at bootstrap. The app pipeline overrides this on each deploy."
   type        = string
@@ -31,14 +37,16 @@ variable "image_tag" {
 # ---- Datastore EC2 ----
 
 variable "ec2_instance_type" {
+  # t3.micro is free-tier eligible (750 hrs/mo for 12 months). 1 GiB RAM is
+  # tight for MariaDB + Redis; bump to t3.small if you hit memory pressure.
   type    = string
-  default = "t3.small"
+  default = "t3.micro"
 }
 
 variable "data_volume_size" {
   description = "EBS data volume (GiB) for MariaDB + Redis persistence."
   type        = number
-  default     = 20
+  default     = 10
 }
 
 variable "ssh_ingress_cidr" {

@@ -1,14 +1,27 @@
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.project}"
-  retention_in_days = 14
+  retention_in_days = 7
 }
 
 resource "aws_ecs_cluster" "main" {
   name = var.project
 
+  # Container Insights costs extra (CloudWatch custom metrics). App logs still
+  # go to the log group above, and basic ECS CPU/memory metrics stay free.
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
+  }
+}
+
+# Make FARGATE_SPOT available and the default — ~70% cheaper than on-demand.
+resource "aws_ecs_cluster_capacity_providers" "main" {
+  cluster_name       = aws_ecs_cluster.main.name
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+
+  default_capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
   }
 }
 
@@ -63,7 +76,13 @@ resource "aws_ecs_service" "app" {
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = var.desired_count
-  launch_type     = "FARGATE"
+
+  # Run on Fargate Spot (~70% cheaper). A reclaimed task is rescheduled with a
+  # short gap; fine for a small service. Switch to FARGATE for zero interruption.
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 1
+  }
 
   network_configuration {
     subnets          = data.aws_subnets.default.ids
@@ -79,7 +98,7 @@ resource "aws_ecs_service" "app" {
 
   health_check_grace_period_seconds = 60
 
-  depends_on = [aws_lb_listener.http, aws_volume_attachment.data]
+  depends_on = [aws_lb_listener.http, aws_volume_attachment.data, aws_ecs_cluster_capacity_providers.main]
 
   # The app pipeline updates task_definition (new image) and may scale
   # desired_count; don't let `terraform apply` revert those.

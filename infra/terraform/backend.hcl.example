@@ -3,5 +3,5 @@
 # Create the bucket once before `terraform init` — see README.md.
 bucket  = "streamsight-tfstate-CHANGEME"
 key     = "streamsight/terraform.tfstate"
-region  = "ap-northeast-1"
+region  = "ap-northeast-2"
 encrypt = true
