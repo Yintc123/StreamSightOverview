@@ -103,9 +103,9 @@ three apps can **share cleanly**:
 | `/streamsight/backend/encryption_key` | AES-256 column key | Backend |
 | `/streamsight/backend/jwt_secret_key` | JWT signing | Backend |
 | `/streamsight/backend/refresh_token_hash_secret` | refresh-token pepper | Backend |
-| `/streamsight/backend/initial_admin_password` | seed super-admin password | Backend seed script |
-| `/streamsight/backend/initial_admin_username` | seed super-admin username | Backend seed script |
-| `/streamsight/backend/initial_admin_name` | seed super-admin display name | Backend seed script |
+| `/streamsight/backend/initial_admin_password_hash` | super-admin argon2id password hash | Backend |
+| `/streamsight/backend/initial_admin_username` | super-admin username | Backend |
+| `/streamsight/backend/initial_admin_name` | super-admin display name | Backend |
 | `/streamsight/frontend/session_secret` | iron-session signing | Frontend |
 
 **Sharing model**: shared datastore creds live under `shared/` and are read by every app

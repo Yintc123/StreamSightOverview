@@ -125,21 +125,21 @@ variable "session_secret" {
   sensitive   = true
 }
 
-variable "initial_admin_password" {
-  description = "Backend seed super-admin password (INITIAL_ADMIN_PASSWORD; consumed by the one-time create_admin seed script)."
+variable "initial_admin_password_hash" {
+  description = "Backend super-admin argon2id password hash (INITIAL_ADMIN_PASSWORD_HASH). Pre-hash the password — plaintext never touches SSM/state. Enables the config-backed super admin together with the username."
   type        = string
   default     = ""
   sensitive   = true
 }
 
 variable "initial_admin_username" {
-  description = "Backend seed super-admin username (INITIAL_ADMIN_USERNAME). Stored in SSM alongside the password (same mechanism), created only when the password is set."
+  description = "Backend super-admin username (INITIAL_ADMIN_USERNAME). Stored in SSM alongside the hash (same mechanism), created only when the hash is set."
   type        = string
   default     = "admin"
 }
 
 variable "initial_admin_name" {
-  description = "Backend seed super-admin display name (INITIAL_ADMIN_NAME). Stored in SSM alongside the password (same mechanism), created only when the password is set."
+  description = "Backend super-admin display name (INITIAL_ADMIN_NAME; optional, empty → username). Stored in SSM alongside the hash, created only when the hash is set."
   type        = string
   default     = "Administrator"
 }
