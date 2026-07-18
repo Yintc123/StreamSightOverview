@@ -39,6 +39,18 @@ output "terraform_role_arns" {
   value       = { for k, r in aws_iam_role.app_terraform : k => r.arn }
 }
 
+# --- Service discovery (shared by all app stacks) ---
+
+output "service_discovery_namespace_id" {
+  description = "Cloud Map private DNS namespace ID (${var.project}.local). App stacks look this up via aws_service_discovery_dns_namespace to register their own services."
+  value       = aws_service_discovery_private_dns_namespace.main.id
+}
+
+output "internal_sg_id" {
+  description = "Security group for VPC-internal ECS-to-ECS traffic. App stacks attach this alongside their own SG so tasks can call each other via ${var.project}.local DNS."
+  value       = aws_security_group.internal.id
+}
+
 # --- Infra pipeline (not an app) ---
 
 output "terraform_role_arn" {
