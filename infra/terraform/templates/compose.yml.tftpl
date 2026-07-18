@@ -32,3 +32,35 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # 採集 DB 主機的 OS 層硬體指標（CPU、記憶體、磁碟使用率、IOPS、網路流量）。
+  # FastAPI 透過 GET http://node-exporter:9100/metrics 取得即時數據（Prometheus text format）。
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: streamsight-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$$$|/)'
+    ports:
+      - "9100:9100"
+
+  # 採集 MariaDB 引擎層指標（連線數、Buffer Pool 命中率、慢查詢、鎖等待等）。
+  # FastAPI 透過 GET http://mysqld-exporter:9104/metrics 取得即時數據（Prometheus text format）。
+  mysqld-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: streamsight-mysqld-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "${db_user}:${db_password}@tcp(mariadb:3306)/${db_name}"
+    ports:
+      - "9104:9104"
+    depends_on:
+      mariadb:
+        condition: service_healthy
