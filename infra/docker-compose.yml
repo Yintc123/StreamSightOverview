@@ -59,13 +59,25 @@ services:
     image: prom/mysqld-exporter:latest
     container_name: streamsight-mysqld-exporter
     restart: unless-stopped
-    environment:
-      DATA_SOURCE_NAME: "${DB_USER:-streamsight}:${DB_PASSWORD:-streamsight}@tcp(mariadb:3306)/${DB_NAME:-streamsight}"
+    command:
+      - "--config.my-cnf=/etc/mysqld-exporter/.my.cnf"
+    configs:
+      - source: mysqld_exporter_config
+        target: /etc/mysqld-exporter/.my.cnf
     ports:
       - "${MYSQLD_EXPORTER_PORT:-9104}:9104"
     depends_on:
       mariadb:
         condition: service_healthy
+
+configs:
+  mysqld_exporter_config:
+    content: |
+      [client]
+      user=${DB_USER:-streamsight}
+      password=${DB_PASSWORD:-streamsight}
+      host=mariadb
+      port=3306
 
 volumes:
   mariadb_data:

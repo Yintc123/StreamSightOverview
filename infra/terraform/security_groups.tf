@@ -70,6 +70,22 @@ resource "aws_security_group" "datastore" {
     security_groups = [aws_security_group.ecs.id]
   }
 
+  ingress {
+    description     = "Node Exporter from ECS"
+    from_port       = 9100
+    to_port         = 9100
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id]
+  }
+
+  ingress {
+    description     = "MySQL Exporter from ECS"
+    from_port       = 9104
+    to_port         = 9104
+    protocol        = "tcp"
+    security_groups = [aws_security_group.ecs.id]
+  }
+
   dynamic "ingress" {
     for_each = var.ssh_ingress_cidr == "" ? [] : [var.ssh_ingress_cidr]
     content {
