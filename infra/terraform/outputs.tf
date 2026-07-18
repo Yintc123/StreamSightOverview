@@ -42,12 +42,12 @@ output "terraform_role_arns" {
 # --- Service discovery (shared by all app stacks) ---
 
 output "service_discovery_namespace_id" {
-  description = "Cloud Map private DNS namespace ID (${var.project}.local). App stacks look this up via aws_service_discovery_dns_namespace to register their own services."
+  description = "Cloud Map private DNS namespace ID. App stacks look this up via aws_service_discovery_dns_namespace to register their own services."
   value       = aws_service_discovery_private_dns_namespace.main.id
 }
 
 output "internal_sg_id" {
-  description = "Security group for VPC-internal ECS-to-ECS traffic. App stacks attach this alongside their own SG so tasks can call each other via ${var.project}.local DNS."
+  description = "Security group for VPC-internal ECS-to-ECS traffic. App stacks attach this alongside their own SG so tasks can call each other via Cloud Map DNS."
   value       = aws_security_group.internal.id
 }
 
