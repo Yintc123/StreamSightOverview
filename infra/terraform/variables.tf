@@ -133,13 +133,13 @@ variable "initial_admin_password" {
 }
 
 variable "initial_admin_username" {
-  description = "Backend seed super-admin username (INITIAL_ADMIN_USERNAME; non-secret)."
+  description = "Backend seed super-admin username (INITIAL_ADMIN_USERNAME). Stored in SSM alongside the password (same mechanism), created only when the password is set."
   type        = string
   default     = "admin"
 }
 
 variable "initial_admin_name" {
-  description = "Backend seed super-admin display name (INITIAL_ADMIN_NAME; non-secret)."
+  description = "Backend seed super-admin display name (INITIAL_ADMIN_NAME). Stored in SSM alongside the password (same mechanism), created only when the password is set."
   type        = string
   default     = "Administrator"
 }
