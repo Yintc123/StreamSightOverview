@@ -125,6 +125,25 @@ variable "session_secret" {
   sensitive   = true
 }
 
+variable "initial_admin_password" {
+  description = "Backend seed super-admin password (INITIAL_ADMIN_PASSWORD; consumed by the one-time create_admin seed script)."
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "initial_admin_username" {
+  description = "Backend seed super-admin username (INITIAL_ADMIN_USERNAME; non-secret)."
+  type        = string
+  default     = "admin"
+}
+
+variable "initial_admin_name" {
+  description = "Backend seed super-admin display name (INITIAL_ADMIN_NAME; non-secret)."
+  type        = string
+  default     = "Administrator"
+}
+
 # ---- ECS service sizing ----
 
 variable "desired_count" {

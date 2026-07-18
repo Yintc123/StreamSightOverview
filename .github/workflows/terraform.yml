@@ -1,7 +1,21 @@
 name: terraform
 
+# Validation-only checker. This stack is applied MANUALLY from AWS CloudShell
+# (the bootstrap mechanism) with the operator's own admin credentials and the
+# full set of TF_VARs (db/redis + app secrets) — NOT from CI. CI must not apply:
+# it wouldn't have every app-secret value, so an apply would drop params from
+# app_secrets_set and DELETE SSM parameters that exist in state.
+#
+# So CI just checks formatting + config validity on every push/PR. No AWS
+# credentials, no secrets, no plan/apply.
+
 on:
   push:
+    branches: [main]
+    paths:
+      - 'infra/terraform/**'
+      - '.github/workflows/terraform.yml'
+  pull_request:
     branches: [main]
     paths:
       - 'infra/terraform/**'
@@ -9,17 +23,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  id-token: write # assume the AWS role via OIDC
   contents: read
 
-env:
-  AWS_REGION: ap-northeast-2
-  TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-  TF_VAR_db_root_password: ${{ secrets.DB_ROOT_PASSWORD }}
-  TF_VAR_redis_password: ${{ secrets.REDIS_PASSWORD }}
-
 jobs:
-  terraform:
+  validate:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -27,27 +34,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.TF_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.15.8
 
-      - name: Init
-        run: terraform init -backend-config=backend.hcl
+      # -backend=false: init providers only, no S3 backend — so this needs no
+      # AWS credentials. Real applies run in CloudShell against the S3 backend.
+      - name: Init (no backend)
+        run: terraform init -backend=false
 
       - name: Format check
         run: terraform fmt -check -recursive
 
       - name: Validate
         run: terraform validate
-
-      - name: Plan
-        run: terraform plan -no-color -input=false
-
-      - name: Apply
-        if: github.ref == 'refs/heads/main'
-        run: terraform apply -no-color -input=false -auto-approve

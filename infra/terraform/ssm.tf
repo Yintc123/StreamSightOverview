@@ -37,6 +37,7 @@ locals {
     "backend/encryption_key"            = var.encryption_key
     "backend/jwt_secret_key"            = var.jwt_secret_key
     "backend/refresh_token_hash_secret" = var.refresh_token_hash_secret
+    "backend/initial_admin_password"    = var.initial_admin_password
     "frontend/session_secret"           = var.session_secret
   }
   app_secrets_set = { for k, v in local.app_secrets : k => v if nonsensitive(v) != "" }
@@ -47,5 +48,24 @@ resource "aws_ssm_parameter" "app" {
 
   name  = "/${var.project}/${each.key}"
   type  = "SecureString"
+  value = each.value
+}
+
+# --- Non-secret seed-admin identity (plain String params) ---
+# Username/name aren't secrets, so they're String, not SecureString. Created
+# only alongside the seed password (same gate) so the trio lands together and
+# is ready for the backend's create_admin script when it deploys.
+locals {
+  seed_admin_config = nonsensitive(var.initial_admin_password) == "" ? {} : {
+    "backend/initial_admin_username" = var.initial_admin_username
+    "backend/initial_admin_name"     = var.initial_admin_name
+  }
+}
+
+resource "aws_ssm_parameter" "config" {
+  for_each = local.seed_admin_config
+
+  name  = "/${var.project}/${each.key}"
+  type  = "String"
   value = each.value
 }
