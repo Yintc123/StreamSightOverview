@@ -1,4 +1,4 @@
-# StreamSight — 首次環境設定（Windows PowerShell）
+﻿# StreamSight — 首次環境設定（Windows PowerShell）
 # 用法：.\setup.ps1
 # 需要 PowerShell 5.1+（Windows 內建）或 PowerShell 7+
 #
@@ -6,6 +6,8 @@
 #   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding            = [System.Text.Encoding]::UTF8
 
 # ── Clone 子專案 ─────────────────────────────────────────────────
 Write-Host ">>> Clone 子專案..."
@@ -87,7 +89,7 @@ $secrets = @{
 }
 
 # ── 讀 .env.example，逐行覆寫對應欄位 ──────────────────────────
-$lines = Get-Content ".env.example" | ForEach-Object {
+$lines = Get-Content ".env.example" -Encoding UTF8 | ForEach-Object {
     $line = $_
     foreach ($key in $secrets.Keys) {
         if ($line -match "^$key=") {
