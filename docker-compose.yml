@@ -139,10 +139,14 @@ services:
     restart: unless-stopped
     env_file: .env
     environment:
-      # Docker 內部 service discovery
+      # Docker 內部 service discovery(僅 server-side 呼叫用)
       BFF_BASE_URL: http://frontend:3000
       FASTAPI_BASE_URL: http://backend:8000
-      STREAMLIT_ORIGIN: http://streamlit:8501
+      # 瀏覽器可達位址:登入重導 meta refresh / TopBar 連結用,
+      # 不可用內部主機名(瀏覽器解析不了 frontend / streamlit)
+      BFF_PUBLIC_BASE_URL: http://localhost:${FRONTEND_PORT:-3000}
+      # logout 的 Origin header:須為瀏覽器 origin 且列於 frontend ALLOWED_ORIGINS
+      STREAMLIT_ORIGIN: http://localhost:${STREAMLIT_PORT:-8501}
     ports:
       - "${STREAMLIT_PORT:-8501}:8501"
     depends_on:
