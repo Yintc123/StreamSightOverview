@@ -31,6 +31,62 @@ Prometheus Exporters
 Go Server :8080（獨立健康檢查服務，選用；搭配 infra/docker-compose.yml）
 ```
 
+### 完整系統架構圖
+
+```mermaid
+flowchart TB
+    subgraph client["使用者端"]
+        Browser["瀏覽器<br/>（只持有加密 session cookie，拿不到 JWT）"]
+    end
+
+    subgraph apps["應用服務（docker-compose.yml）"]
+        Frontend["Frontend — Next.js 16 BFF<br/>:3000<br/>Route Handlers・iron-session・CSRF 防護・CMS"]
+        Streamlit["Streamlit 儀表板<br/>:8501<br/>資料管理・即時監控・資料分析"]
+        Backend["Backend — FastAPI<br/>:8000<br/>JWT + Argon2id・Admin RBAC・Records CRUD<br/>即時串流・WebSocket 推播・監控 API"]
+    end
+
+    subgraph infra["共用基礎設施"]
+        MariaDB[("MariaDB 11.7<br/>:3306<br/>AES-256-CBC 欄位加密")]
+        Redis[("Redis 7<br/>:6379<br/>快取・Pub/Sub・Streams・BFF session")]
+    end
+
+    subgraph observability["可觀測性（Prometheus Exporters）"]
+        NodeExporter["node-exporter<br/>:9100<br/>主機系統指標"]
+        MysqldExporter["mysqld-exporter<br/>:9104<br/>MariaDB 指標"]
+    end
+
+    subgraph optional["選用（infra/docker-compose.yml）"]
+        GoServer["Go Server — Gin<br/>:8080<br/>/healthz・/readyz"]
+    end
+
+    Browser -->|"/api/*（session cookie）"| Frontend
+    Browser -->|"HTTP :8501"| Streamlit
+
+    Frontend -->|"REST（內網，附 JWT）"| Backend
+    Frontend -->|"session 儲存（ioredis）"| Redis
+
+    Streamlit -->|"token 交換：<br/>cookie → 短命 access token"| Frontend
+    Streamlit -->|"REST + WebSocket"| Backend
+
+    Backend -->|"SQLAlchemy 2.x async<br/>（asyncmy）+ Alembic"| MariaDB
+    Backend -->|"快取 / Pub-Sub / Streams"| Redis
+    Backend -->|"拉取指標<br/>（/monitoring API）"| NodeExporter
+    Backend -->|"拉取指標<br/>（/monitoring API）"| MysqldExporter
+
+    MysqldExporter -->|"讀取 DB 統計"| MariaDB
+
+    GoServer -.->|"readiness 探測"| MariaDB
+    GoServer -.->|"readiness 探測"| Redis
+```
+
+**資料流說明**
+
+1. **瀏覽器 → BFF**：瀏覽器一律呼叫 Next.js 的 `/api/*` Route Handlers，僅持有 iron-session 加密 cookie；真後端位址與 JWT 完全不暴露給瀏覽器。
+2. **BFF → Backend**：BFF 於伺服器端以 JWT 呼叫 FastAPI（Docker 內網 `http://backend:8000`），session 內容存放於 Redis。
+3. **Streamlit 認證**：Streamlit 不自行處理登入，而是以同一顆 BFF session cookie 向 BFF 交換短命 access token，再以此 token 直接呼叫 Backend 的 REST 與 WebSocket API（詳見 Streamlit repo ADR 0003）。
+4. **監控指標**：Backend 的 `/monitoring` API 主動向 node-exporter 與 mysqld-exporter 拉取 Prometheus 指標並整合回傳。
+5. **Go Server**：獨立的健康檢查服務，`/readyz` 會探測 MariaDB 與 Redis 連線；不參與主要請求路徑（虛線）。
+
 安全設計重點：瀏覽器永遠拿不到後端 JWT——只持有 BFF 的加密 session cookie；Streamlit 以同一顆 cookie 向 BFF 換取短命 access token（token 交換，見 Streamlit repo ADR 0003）。
 
 ## 技術棧說明
