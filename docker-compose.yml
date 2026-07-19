@@ -20,7 +20,7 @@ services:
   # ────────────────────────────────────────────────────────────────
 
   mariadb:
-    image: mariadb:11
+    image: mariadb:11.7
     container_name: streamsight-mariadb
     restart: unless-stopped
     environment:
