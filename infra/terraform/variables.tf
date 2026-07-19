@@ -125,8 +125,8 @@ variable "session_secret" {
   sensitive   = true
 }
 
-variable "initial_admin_password_hash" {
-  description = "Backend super-admin argon2id password hash (INITIAL_ADMIN_PASSWORD_HASH). Pre-hash the password — plaintext never touches SSM/state. Enables the config-backed super admin together with the username."
+variable "initial_admin_password" {
+  description = "Backend super-admin plaintext password (INITIAL_ADMIN_PASSWORD). Stored in SSM and injected into the task; the backend hashes it on startup. Enables the config-backed super admin together with the username."
   type        = string
   default     = ""
   sensitive   = true

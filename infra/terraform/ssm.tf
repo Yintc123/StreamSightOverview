@@ -33,18 +33,18 @@ resource "aws_ssm_parameter" "redis_password" {
 # emptiness (for_each keys can't derive from sensitive values); the value stays
 # sensitive.
 locals {
-  # The super-admin username/name are gated on the password hash so the whole
+  # The super-admin username/name are gated on the password so the whole
   # trio lands together (and none appears without it). They go through the same
   # map/resource as every other app secret — SecureString, one gate, one
-  # aws_ssm_parameter.app. The password is stored ONLY as an argon2id hash
-  # (INITIAL_ADMIN_PASSWORD_HASH) — plaintext never touches SSM or state.
+  # aws_ssm_parameter.app. The password (INITIAL_ADMIN_PASSWORD) is stored in
+  # SSM; the backend hashes it on startup.
   app_secrets = merge({
-    "backend/encryption_key"              = var.encryption_key
-    "backend/jwt_secret_key"              = var.jwt_secret_key
-    "backend/refresh_token_hash_secret"   = var.refresh_token_hash_secret
-    "backend/initial_admin_password_hash" = var.initial_admin_password_hash
-    "frontend/session_secret"             = var.session_secret
-    }, nonsensitive(var.initial_admin_password_hash) == "" ? {} : {
+    "backend/encryption_key"            = var.encryption_key
+    "backend/jwt_secret_key"            = var.jwt_secret_key
+    "backend/refresh_token_hash_secret" = var.refresh_token_hash_secret
+    "backend/initial_admin_password"    = var.initial_admin_password
+    "frontend/session_secret"           = var.session_secret
+    }, nonsensitive(var.initial_admin_password) == "" ? {} : {
     "backend/initial_admin_username" = var.initial_admin_username
     "backend/initial_admin_name"     = var.initial_admin_name
   })
