@@ -119,9 +119,9 @@ git clone https://github.com/Yintc123/StreamSight.git
 cd StreamSight
 ```
 
-### 2. 執行初始化腳本（產生 `.env`）
+### 2. 執行初始化腳本（產生 `.env` 並啟動服務）
 
-腳本會自動 clone 三個應用子專案、互動式設定初始管理員帳號，並以 `.env.example` 為基底產生根目錄 `.env`（含四組隨機 secrets）。
+腳本會自動 clone 三個應用子專案、互動式設定初始管理員帳號，以 `.env.example` 為基底產生根目錄 `.env`（含四組隨機 secrets），最後自動執行 `docker compose build --no-cache` 完整重建 image，build 完成後 `docker compose up -d` 啟動全部服務（即使選擇保留現有 `.env`，也會照樣重建並啟動）。
 
 **macOS / Linux**
 
@@ -150,7 +150,9 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 腳本會將你的輸入寫入 `.env` 的 `INITIAL_ADMIN_USERNAME` / `INITIAL_ADMIN_NAME` / `INITIAL_ADMIN_PASSWORD`，並自動產生 `ENCRYPTION_KEY`、`JWT_SECRET_KEY`、`REFRESH_TOKEN_HASH_SECRET`、`SESSION_SECRET` 四組 48-byte 隨機 secrets（詳見下方「測試帳號資訊」）。
 
-### 3. 啟動全部服務
+### 3. 確認服務啟動
+
+服務已由腳本自動啟動，無需再執行其他指令；若未透過腳本（或之後要重新啟動），手動執行：
 
 ```bash
 docker compose up -d --build
@@ -263,9 +265,9 @@ docker compose down -v
    INITIAL_ADMIN_PASSWORD=********     # 你輸入的密碼
    ```
 
-4. Backend 首次啟動時讀取這三個變數，自動在 DB upsert 一個 `ROOT` 角色的管理員（受保護，不可透過 API 降級或停用）。
+4. 腳本接著自動重建 image 並啟動全部服務；Backend 首次啟動時讀取這三個變數，自動在 DB upsert 一個 `ROOT` 角色的管理員（受保護，不可透過 API 降級或停用）。
 
-之後即可用這組帳密登入：
+腳本跑完即可直接用這組帳密登入：
 
 | 入口 | 位址 |
 |------|------|
