@@ -19,6 +19,18 @@ clone_if_missing StreamSightBackend   https://github.com/Yintc123/StreamSightBac
 clone_if_missing StreamSightFrontend  https://github.com/Yintc123/StreamSightFrontend.git
 clone_if_missing StreamSightStreamlit https://github.com/Yintc123/StreamSightStreamlit.git
 
+# ── 啟動服務（no-cache 重建 → up -d）───────────────────────────
+start_services() {
+  echo ""
+  echo ">>> 重建 image（--no-cache）..."
+  docker compose build --no-cache
+  echo ""
+  echo ">>> 啟動服務..."
+  docker compose up -d
+  echo ""
+  echo ">>> 完成！服務已啟動"
+}
+
 # ── 產生 .env ────────────────────────────────────────────────────
 echo ""
 echo ">>> 建立 .env..."
@@ -28,7 +40,7 @@ if [ -f .env ]; then
   read -r overwrite
   case "$overwrite" in
     [yY]) ;;
-    *) echo "  跳過，保留現有 .env"; echo ""; echo ">>> 完成！執行 docker compose up -d 啟動服務"; exit 0 ;;
+    *) echo "  跳過，保留現有 .env"; start_services; exit 0 ;;
   esac
 fi
 
@@ -121,10 +133,5 @@ set_env INITIAL_ADMIN_PASSWORD  "$admin_password"
 
 echo "  .env 已產生"
 
-# ── 完成 ─────────────────────────────────────────────────────────
-echo ""
-echo ">>> 完成！執行以下指令啟動服務："
-echo "  docker compose up -d"
-echo ""
-echo "  若需不使用 cache 完全重建再啟動："
-echo "  docker compose build --no-cache && docker compose up -d"
+# ── 完成：重建並啟動 ─────────────────────────────────────────────
+start_services

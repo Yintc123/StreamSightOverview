@@ -24,6 +24,20 @@ Clone-IfMissing "StreamSightBackend"   "https://github.com/Yintc123/StreamSightB
 Clone-IfMissing "StreamSightFrontend"  "https://github.com/Yintc123/StreamSightFrontend.git"
 Clone-IfMissing "StreamSightStreamlit" "https://github.com/Yintc123/StreamSightStreamlit.git"
 
+# ── 啟動服務（no-cache 重建 → up -d）────────────────────────────
+function Start-Services {
+    Write-Host ""
+    Write-Host ">>> 重建 image（--no-cache）..."
+    docker compose build --no-cache
+    if ($LASTEXITCODE -ne 0) { Write-Error "錯誤：docker compose build 失敗"; exit 1 }
+    Write-Host ""
+    Write-Host ">>> 啟動服務..."
+    docker compose up -d
+    if ($LASTEXITCODE -ne 0) { Write-Error "錯誤：docker compose up 失敗"; exit 1 }
+    Write-Host ""
+    Write-Host ">>> 完成！服務已啟動"
+}
+
 # ── 建立 .env ─────────────────────────────────────────────────────
 Write-Host ""
 Write-Host ">>> 建立 .env..."
@@ -32,8 +46,7 @@ if (Test-Path ".env") {
     $overwrite = Read-Host "  .env 已存在，要覆蓋嗎？[y/N]"
     if ($overwrite -ne "y" -and $overwrite -ne "Y") {
         Write-Host "  跳過，保留現有 .env"
-        Write-Host ""
-        Write-Host ">>> 完成！執行 docker compose up -d 啟動服務"
+        Start-Services
         exit 0
     }
 }
@@ -114,9 +127,6 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllLines($envPath, $lines, $utf8NoBom)
 
 Write-Host "  .env 已產生"
-Write-Host ""
-Write-Host ">>> 完成！執行以下指令啟動服務："
-Write-Host "  docker compose up -d"
-Write-Host ""
-Write-Host "  若需不使用 cache 完全重建再啟動："
-Write-Host "  docker compose build --no-cache; docker compose up -d"
+
+# ── 完成：重建並啟動 ─────────────────────────────────────────────
+Start-Services
