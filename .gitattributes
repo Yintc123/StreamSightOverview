@@ -1,0 +1,2 @@
+# 強制 shell script 永遠使用 LF，避免 Windows checkout 產生 CRLF 讓 shebang 失效
+*.sh text eol=lf

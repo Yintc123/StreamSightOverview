@@ -1,0 +1,167 @@
+# StreamSight — 全端本機啟動
+#
+# 使用方式：
+#   cp .env.example .env      # 首次設定，填入 secrets
+#   docker compose up -d      # 背景啟動全部服務
+#   docker compose up -d backend streamlit  # 只啟動特定服務
+#   docker compose logs -f frontend         # 追蹤 log
+#   docker compose down -v                  # 停止並清除 volumes
+#
+# 注意：各子專案本機開發仍讀自己的 .env / .env.local；
+#       本檔的 .env 僅供 Docker Compose 使用。
+#
+# Docker 內部網路：services 以 container 名稱互連（不是 localhost）。
+# 每個 service 的 environment: 區塊負責覆蓋 .env 的 localhost 值。
+
+services:
+
+  # ────────────────────────────────────────────────────────────────
+  # Infrastructure
+  # ────────────────────────────────────────────────────────────────
+
+  mariadb:
+    image: mariadb:11
+    container_name: streamsight-mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${DB_NAME:-streamsight}
+      MARIADB_USER: ${DB_USER:-streamsight}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-streamsight}
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: streamsight-redis
+    restart: unless-stopped
+    command: >
+      redis-server --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: streamsight-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "${NODE_EXPORTER_PORT:-9100}:9100"
+
+  mysqld-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: streamsight-mysqld-exporter
+    restart: unless-stopped
+    command:
+      - "--config.my-cnf=/etc/mysqld-exporter/.my.cnf"
+    configs:
+      - source: mysqld_exporter_config
+        target: /etc/mysqld-exporter/.my.cnf
+    ports:
+      - "${MYSQLD_EXPORTER_PORT:-9104}:9104"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  # ────────────────────────────────────────────────────────────────
+  # Applications
+  # ────────────────────────────────────────────────────────────────
+
+  backend:
+    build:
+      context: ./StreamSightBackend
+    image: streamsight-backend
+    container_name: streamsight-backend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Docker 內部 service discovery
+      DB_HOST: mariadb
+      REDIS_HOST: redis
+      MONITORING_INFRA_NODE_EXPORTER_URL: http://node-exporter:9100
+      MONITORING_INFRA_MYSQLD_EXPORTER_URL: http://mysqld-exporter:9104
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./StreamSightFrontend
+      args:
+        NEXT_PUBLIC_APP_NAME: ${NEXT_PUBLIC_APP_NAME:-StreamSight}
+        NEXT_PUBLIC_ENABLE_THEME_TOGGLE: ${NEXT_PUBLIC_ENABLE_THEME_TOGGLE:-0}
+    image: streamsight-frontend
+    container_name: streamsight-frontend
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Docker 內部 service discovery
+      BACKEND_API_URL: http://backend:8000
+      REDIS_HOST: redis
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+      - redis
+
+  streamlit:
+    build:
+      context: ./StreamSightStreamlit
+    image: streamsight-streamlit
+    container_name: streamsight-streamlit
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Docker 內部 service discovery
+      BFF_BASE_URL: http://frontend:3000
+      FASTAPI_BASE_URL: http://backend:8000
+      STREAMLIT_ORIGIN: http://streamlit:8501
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    depends_on:
+      - frontend
+      - backend
+
+# ────────────────────────────────────────────────────────────────
+# Configs & Volumes
+# ────────────────────────────────────────────────────────────────
+
+configs:
+  mysqld_exporter_config:
+    content: |
+      [client]
+      user=${DB_USER:-streamsight}
+      password=${DB_PASSWORD:-streamsight}
+      host=mariadb
+      port=3306
+
+volumes:
+  mariadb_data:
+  redis_data:
