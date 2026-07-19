@@ -153,7 +153,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ### 3. 啟動全部服務
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 Backend 容器啟動時會自動執行 `alembic upgrade head`（含 seed 假資料）並依 `INITIAL_ADMIN_*` 建立 root 管理員，無需手動跑 migration。
@@ -206,10 +206,10 @@ go run .                                        # → :8080
 
 ```bash
 # 啟動全部服務（背景執行）
-docker compose up -d
+docker compose up -d --build
 
 # 只啟動特定服務（依賴會自動帶起，如 backend → mariadb、redis）
-docker compose up -d backend streamlit
+docker compose up -d --build backend streamlit
 
 # 查看服務狀態 / 健康檢查
 docker compose ps
@@ -290,7 +290,7 @@ Backend 執行 `alembic upgrade head`（容器啟動時自動執行）會種入 
 
 ### Frontend Mock 模式帳號（僅 `USE_MOCK=1`）
 
-Frontend 單獨以 mock 模式開發時（不接真後端），login handler 不驗證帳密——任意帳密皆可登入，登入後固定為 root 管理員身分。e2e 測試慣例使用 `admin` / `admin-dev-password-change-me`。整合部署（`docker compose up -d`）走真後端，此帳號無效。
+Frontend 單獨以 mock 模式開發時（不接真後端），login handler 不驗證帳密——任意帳密皆可登入，登入後固定為 root 管理員身分。e2e 測試慣例使用 `admin` / `admin-dev-password-change-me`。整合部署（`docker compose up -d --build`）走真後端，此帳號無效。
 
 ## 環境變數說明
 
