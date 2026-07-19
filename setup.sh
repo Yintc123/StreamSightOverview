@@ -39,6 +39,12 @@ echo "--- 初始管理員設定 ---"
 printf "  Username [admin]: "
 read -r admin_username
 admin_username="${admin_username:-admin}"
+# 正規化（strip + lowercase），對齊後端 normalize_username
+admin_username=$(printf '%s' "$admin_username" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+if ! printf '%s' "$admin_username" | grep -qE '^[a-z0-9._-]{3,100}$'; then
+  echo "  錯誤：username 只能含小寫英數、. _ -，長度 3-100 個字元" >&2
+  exit 1
+fi
 
 printf "  Display name [Administrator]: "
 read -r admin_name
@@ -62,6 +68,12 @@ admin_password=$(read_secret "  Password: ")
 
 if [ -z "$admin_password" ]; then
   echo "  錯誤：密碼不能為空" >&2
+  exit 1
+fi
+
+_pw_len=$(printf '%s' "$admin_password" | wc -c | tr -d ' ')
+if [ "$_pw_len" -lt 8 ] || [ "$_pw_len" -gt 128 ]; then
+  echo "  錯誤：密碼長度必須為 8-128 個字元（目前：${_pw_len}）" >&2
   exit 1
 fi
 

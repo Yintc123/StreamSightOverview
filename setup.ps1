@@ -44,6 +44,11 @@ Write-Host "--- 初始管理員設定 ---"
 
 $adminUsername = Read-Host "  Username [admin]"
 if ([string]::IsNullOrEmpty($adminUsername)) { $adminUsername = "admin" }
+# 正規化（strip + lowercase），對齊後端 normalize_username
+$adminUsername = $adminUsername.Trim().ToLowerInvariant()
+if ($adminUsername -notmatch '^[a-z0-9._-]{3,100}$') {
+    Write-Error "錯誤：username 只能含小寫英數、. _ -，長度 3-100 個字元"; exit 1
+}
 
 $adminName = Read-Host "  Display name [Administrator]"
 if ([string]::IsNullOrEmpty($adminName)) { $adminName = "Administrator" }
@@ -61,6 +66,9 @@ $adminPassword2 = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto($bst
 
 if ([string]::IsNullOrEmpty($adminPassword)) {
     Write-Error "錯誤：密碼不能為空"; exit 1
+}
+if ($adminPassword.Length -lt 8 -or $adminPassword.Length -gt 128) {
+    Write-Error "錯誤：密碼長度必須為 8-128 個字元（目前：$($adminPassword.Length)）"; exit 1
 }
 if ($adminPassword -ne $adminPassword2) {
     Write-Error "錯誤：兩次密碼不一致"; exit 1
